@@ -30,6 +30,9 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
         _sender.stream_in().set_error();
         _receiver.stream_out().set_error();
         _linger_after_streams_finish = false;
+        _fin_be_ack=true;
+        _receiver.stream_out().end_input();
+        _sender.stream_in().end_input();
         return;
     }
 
@@ -135,6 +138,9 @@ TCPConnection::~TCPConnection() {
             _sender.stream_in().set_error();
             _receiver.stream_out().set_error();
             _linger_after_streams_finish = false;
+            _fin_be_ack=true;
+            _receiver.stream_out().end_input();
+            _sender.stream_in().end_input();
         }
     } catch (const exception &e) {
         std::cerr << "Exception destructing TCP FSM: " << e.what() << std::endl;
