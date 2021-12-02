@@ -13,6 +13,14 @@ class TCPConnection {
     TCPReceiver _receiver{_cfg.recv_capacity};
     TCPSender _sender{_cfg.send_capacity, _cfg.rt_timeout, _cfg.fixed_isn};
 
+
+    size_t _ticks_since_last_segment_received{0};
+    //size_t _ticks_since_last_ack{0};
+    bool _recent_need_to_ack_instantly{false};
+    WrappingInt32 _ackno{0};
+    bool _fin_be_ack{false};
+
+
     //! outbound queue of segments that the TCPConnection wants sent
     std::queue<TCPSegment> _segments_out{};
 
@@ -20,6 +28,9 @@ class TCPConnection {
     //! for 10 * _cfg.rt_timeout milliseconds after both streams have ended,
     //! in case the remote TCPConnection doesn't know we've received its whole stream?
     bool _linger_after_streams_finish{true};
+
+
+    void send();
 
   public:
     //! \name "Input" interface for the writer
@@ -67,6 +78,7 @@ class TCPConnection {
 
     //! Called periodically when time elapses
     void tick(const size_t ms_since_last_tick);
+
 
     //! \brief TCPSegments that the TCPConnection has enqueued for transmission.
     //! \note The owner or operating system will dequeue these and

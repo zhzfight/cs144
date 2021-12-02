@@ -144,13 +144,12 @@ int main(int argc, char **argv) {
         auto [c_fsm, c_filt, listen, tun_dev_name] = get_config(argc, argv);
         LossyTCPOverIPv4SpongeSocket tcp_socket(LossyTCPOverIPv4OverTunFdAdapter(
             TCPOverIPv4OverTunFdAdapter(TunFD(tun_dev_name == nullptr ? TUN_DFLT : tun_dev_name))));
-
         if (listen) {
             tcp_socket.listen_and_accept(c_fsm, c_filt);
         } else {
             tcp_socket.connect(c_fsm, c_filt);
         }
-
+        std::cout<<"after connect"<<endl;
         bidirectional_stream_copy(tcp_socket);
         tcp_socket.wait_until_closed();
     } catch (const exception &e) {

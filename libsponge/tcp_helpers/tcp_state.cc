@@ -81,30 +81,47 @@ TCPState::TCPState(const TCPSender &sender, const TCPReceiver &receiver, const b
 
 string TCPState::state_summary(const TCPReceiver &receiver) {
     if (receiver.stream_out().error()) {
+        //std::cout<<"receiver state:"<<TCPReceiverStateSummary::ERROR<<endl;
         return TCPReceiverStateSummary::ERROR;
     } else if (not receiver.ackno().has_value()) {
+        //std::cout<<"receiver state:"<<TCPReceiverStateSummary::LISTEN<<endl;
         return TCPReceiverStateSummary::LISTEN;
     } else if (receiver.stream_out().input_ended()) {
+        //std::cout<<"receiver state:"<<TCPReceiverStateSummary::FIN_RECV<<endl;
         return TCPReceiverStateSummary::FIN_RECV;
     } else {
+        //std::cout<<"receiver state:"<<TCPReceiverStateSummary::SYN_RECV<<endl;
         return TCPReceiverStateSummary::SYN_RECV;
     }
 }
 
 string TCPState::state_summary(const TCPSender &sender) {
     if (sender.stream_in().error()) {
+        //std::cout<<"receiver state:"<<TCPSenderStateSummary::ERROR<<endl;
         return TCPSenderStateSummary::ERROR;
     } else if (sender.next_seqno_absolute() == 0) {
+        //std::cout<<"receiver state:"<<TCPSenderStateSummary::CLOSED<<endl;
+
         return TCPSenderStateSummary::CLOSED;
     } else if (sender.next_seqno_absolute() == sender.bytes_in_flight()) {
+        //std::cout<<"receiver state:"<<TCPSenderStateSummary::SYN_SENT<<endl;
+
         return TCPSenderStateSummary::SYN_SENT;
     } else if (not sender.stream_in().eof()) {
+        //std::cout<<"receiver state:"<<TCPSenderStateSummary::SYN_ACKED<<endl;
+
         return TCPSenderStateSummary::SYN_ACKED;
     } else if (sender.next_seqno_absolute() < sender.stream_in().bytes_written() + 2) {
+        //std::cout<<"receiver state:"<<TCPSenderStateSummary::SYN_ACKED<<endl;
+
         return TCPSenderStateSummary::SYN_ACKED;
     } else if (sender.bytes_in_flight()) {
+        //std::cout<<"receiver state:"<<TCPSenderStateSummary::FIN_SENT<<endl;
+
         return TCPSenderStateSummary::FIN_SENT;
     } else {
+        //std::cout<<"receiver state:"<<TCPSenderStateSummary::FIN_ACKED<<endl;
+
         return TCPSenderStateSummary::FIN_ACKED;
     }
 }

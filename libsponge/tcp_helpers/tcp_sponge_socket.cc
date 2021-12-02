@@ -212,7 +212,10 @@ void TCPSpongeSocket<AdaptT>::connect(const TCPConfig &c_tcp, const FdAdapterCon
     _datagram_adapter.config_mut() = c_ad;
 
     cerr << "DEBUG: Connecting to " << c_ad.destination.to_string() << "... ";
+
+    std::cout<<"connect"<<endl;
     _tcp->connect();
+    std::cout<<"connect end"<<endl;
 
     const TCPState expected_state = TCPState::State::SYN_SENT;
 
