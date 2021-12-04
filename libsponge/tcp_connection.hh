@@ -19,6 +19,7 @@ class TCPConnection {
     bool _recent_need_to_ack_instantly{false};
     WrappingInt32 _ackno{0};
     bool _fin_be_ack{false};
+    bool _stream_closed{false};
 
 
     //! outbound queue of segments that the TCPConnection wants sent

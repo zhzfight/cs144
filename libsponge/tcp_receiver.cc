@@ -17,7 +17,7 @@ bool TCPReceiver::segment_received(const TCPSegment &seg) {
     }
 
     bool in_window=_reassembler.push_substring(seg.payload().copy(),
-                                unwrap(seg.header().seqno , _ISN, _checkpoint)-1+ (seg.header().syn ? 1 : 0),
+                                unwrap(seg.header().seqno , _ISN, _checkpoint)+(seg.header().syn ? 1 : 0)-1,
                                 seg.header().fin);
 
     _checkpoint=_reassembler.get_cur_index();
