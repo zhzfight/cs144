@@ -118,15 +118,19 @@ int main(int argc, char **argv) {
         if (listen) {
             udp_sock.bind(c_filt.source);
         }
+
         LossyTCPOverUDPSpongeSocket tcp_socket(LossyTCPOverUDPSocketAdapter(TCPOverUDPSocketAdapter(move(udp_sock))));
+
         if (listen) {
             tcp_socket.listen_and_accept(c_fsm, c_filt);
         } else {
             tcp_socket.connect(c_fsm, c_filt);
         }
 
+
         bidirectional_stream_copy(tcp_socket);
         tcp_socket.wait_until_closed();
+
     } catch (const exception &e) {
         cerr << "Exception: " << e.what() << endl;
         return EXIT_FAILURE;

@@ -77,8 +77,7 @@ void TCPSender::fill_window() {
     _flight.push(seg);
     _next_seqno += seg.length_in_sequence_space();
     _bytes_in_flight += seg.length_in_sequence_space();
-     std::cout << "send fill wiondow seqno: " << seg.header().seqno << " payloadsize: " << seg.payload().size() <<
-     endl;
+
     send(seg);
     if (!_timer_start) {
         _timer_start = true;
@@ -141,10 +140,10 @@ void TCPSender::tick(const size_t ms_since_last_tick) {
     if (_ticks >= _RTO) {
         send(_flight.front());
         _ticks = 0;
-        std::cout << "rto expired resend the first outstanding,and set ticks to 0" << endl;
+
 
         _consecutive_retransmissions++;
-        std::cout<<"now retransmissions times"<<_consecutive_retransmissions<<endl;
+
         if (!_win_zero_flag) {
             _RTO *= 2;
         }
