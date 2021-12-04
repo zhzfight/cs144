@@ -99,15 +99,14 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
         _RTO = _initial_retransmission_timeout;
         _consecutive_retransmissions = 0;
         while (!_flight.empty()) {
+
             uint64_t first_seg_seqno =
                 unwrap(_flight.front().header().seqno, _isn, _checkpoint) + _flight.front().length_in_sequence_space();
             if (first_seg_seqno <= absolute_ackno) {
                 _bytes_in_flight -= first_seg_seqno - _checkpoint;
                 _checkpoint = first_seg_seqno;
 
-                // std::cout << "pop seqno" << _flight.front().header().seqno << " now bytes in flight" <<
-                // _bytes_in_flight
-                //          << endl;
+
                 _flight.pop();
             } else {
                 // std::cout<<"bytes in flight "<<_bytes_in_flight<<" - "<<absolute_ackno - _checkpoint<<" = ";

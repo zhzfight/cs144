@@ -22,6 +22,8 @@ size_t TCPConnection::time_since_last_segment_received() const { return _ticks_s
 
 void TCPConnection::segment_received(const TCPSegment &seg) {
 
+
+
     /*
      * in state syn_sent,
      * if get a segment with syn, go through down,
@@ -103,6 +105,7 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
         }
     }
     if (seg.header().ack) {
+
         _sender.ack_received(seg.header().ackno, seg.header().win);
     }
 
@@ -114,11 +117,8 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
         _stream_closed = true;
     }
 
-    if (seg.header().win!=0){
-        _sender.fill_window();
-    }
 
-
+    _sender.fill_window();
     send();
 }
 
@@ -226,6 +226,7 @@ void TCPConnection::send() {
         }
 
         _segments_out.push(_sender.segments_out().front());
+
         _sender.segments_out().pop();
     }
 }
