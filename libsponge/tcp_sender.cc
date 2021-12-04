@@ -156,6 +156,6 @@ unsigned int TCPSender::consecutive_retransmissions() const { return _consecutiv
 void TCPSender::send_empty_segment() {
     TCPSegment seg;
 
-    // std::cout << "send empty" << endl;
+
     send(seg);
 }

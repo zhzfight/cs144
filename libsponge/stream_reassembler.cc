@@ -27,8 +27,12 @@ StreamReassembler::StreamReassembler(const size_t capacity)
 bool StreamReassembler::push_substring(const string &data, const size_t index, const bool eof) {
     std::cout<<"index "<<index<<" data "<<data.size()<<" _cur "<<_cur<<" cap "<<stream_out().remaining_capacity()<<endl;
     if (index >= _cur + stream_out().remaining_capacity()) {
+        if (index > _cur + stream_out().remaining_capacity()){
+            return false;
+        }else{
+            return true;
+        }
 
-        return false;
     }
 
     if (index + data.size() <= _cur) {
