@@ -111,7 +111,6 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
             } else {
                 // std::cout<<"bytes in flight "<<_bytes_in_flight<<" - "<<absolute_ackno - _checkpoint<<" = ";
                 _bytes_in_flight -= absolute_ackno - _checkpoint;
-                std::cout << _bytes_in_flight << endl;
                 _checkpoint = absolute_ackno;
                 break;
             }
