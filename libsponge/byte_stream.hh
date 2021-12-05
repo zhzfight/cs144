@@ -18,7 +18,7 @@ class ByteStream {
     // that's a sign that you probably want to keep exploring
     // different approaches.
     size_t capacity_;
-    std::deque<char> buffer_{};
+    std::string buffer_{};
     bool input_end_ = false;
     size_t total_written = 0;
     size_t total_read = 0;

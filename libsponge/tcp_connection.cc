@@ -87,7 +87,6 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
     _ticks_since_last_segment_received = 0;
     bool in_window = _receiver.segment_received(seg);
     if (!in_window) {
-
         _recent_need_to_ack_instantly = true;
     } else {
         if (seg.header().rst) {
@@ -100,12 +99,10 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
             return;
         }
         if (seg.length_in_sequence_space()!=0) {
-
             _recent_need_to_ack_instantly = true;
         }
     }
     if (seg.header().ack) {
-
         _sender.ack_received(seg.header().ackno, seg.header().win);
     }
 
@@ -123,7 +120,11 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
 }
 
 bool TCPConnection::active() const {
-
+    if (_receiver.stream_out().error()||_sender.stream_in().error()){
+        return false;
+    }
+    return !(TCPState::state_summary(_sender) == TCPSenderStateSummary::FIN_ACKED &&
+               TCPState::state_summary(_receiver) == TCPReceiverStateSummary::FIN_RECV&&!_linger_after_streams_finish);
     return !_stream_closed || _linger_after_streams_finish;
 }
 
@@ -166,6 +167,7 @@ void TCPConnection::tick(const size_t ms_since_last_tick) {
 
 void TCPConnection::end_input_stream() {
     _sender.stream_in().end_input();
+
     _sender.fill_window();
     send();
 }

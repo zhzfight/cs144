@@ -16,15 +16,14 @@ bool TCPReceiver::segment_received(const TCPSegment &seg) {
         _ISN = seg.header().seqno;
     }
 
-    bool in_window=_reassembler.push_substring(seg.payload().copy(),
+    bool in_window=_reassembler.push_substring(seg.payload().str(),
                                 unwrap(seg.header().seqno , _ISN, _checkpoint)+(seg.header().syn ? 1 : 0)-1,
                                 seg.header().fin);
 
     _checkpoint=_reassembler.get_cur_index();
     return in_window;
 
-    //std::cout<<"checkpoint to "<<_checkpoint<<" index: "<<unwrap(seg.header().seqno + (seg.header().syn ? 1 : 0), _ISN, _checkpoint)-1
-     //         <<" seqno: "<<seg.header().seqno<<endl;
+
 }
 
 optional<WrappingInt32> TCPReceiver::ackno() const {
