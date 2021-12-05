@@ -105,8 +105,6 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
             if (first_seg_seqno <= absolute_ackno) {
                 _bytes_in_flight -= first_seg_seqno - _checkpoint;
                 _checkpoint = first_seg_seqno;
-
-
                 _flight.pop();
             } else {
                 // std::cout<<"bytes in flight "<<_bytes_in_flight<<" - "<<absolute_ackno - _checkpoint<<" = ";
