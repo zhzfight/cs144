@@ -21,7 +21,10 @@ size_t TCPConnection::unassembled_bytes() const { return _receiver.unassembled_b
 size_t TCPConnection::time_since_last_segment_received() const { return _ticks_since_last_segment_received; }
 
 void TCPConnection::segment_received(const TCPSegment &seg) {
-
+    cerr<<"get seg"<<seg.header().to_string()<<endl<<
+        " sender start"<<TCPState::state_summary(_sender)<<" sender buffer "
+         <<_sender.stream_in().input_ended()<<"  "<<_sender.stream_in().buffer_size()
+         <<" receiver "<<TCPState::state_summary(_receiver)<<endl;
 
 
     /*
@@ -129,6 +132,9 @@ bool TCPConnection::active() const {
 }
 
 size_t TCPConnection::write(const string &data) {
+    if (_sender.stream_in().input_ended()){
+        return 0;
+    }
     size_t actual_write = _sender.stream_in().write(data);
     _sender.fill_window();
     send();
@@ -210,7 +216,7 @@ void TCPConnection::send() {
             seg.header().ackno = _receiver.ackno().value();
             seg.header().win = _receiver.window_size();
             segments_out().push(seg);
-            cerr<<"send seg with data "<<seg.length_in_sequence_space()<<" now total send "<<total_send<<endl;
+
             total_send+=seg.length_in_sequence_space();
 
             _recent_need_to_ack_instantly = false;

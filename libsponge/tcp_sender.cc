@@ -27,7 +27,10 @@ TCPSender::TCPSender(const size_t capacity, const uint16_t retx_timeout, const s
 uint64_t TCPSender::bytes_in_flight() const { return _bytes_in_flight; }
 
 void TCPSender::fill_window() {
-    //std::cout << "fill window size: " << _window_size << endl;
+    if (_closed){
+        return;
+    }
+    cerr << "fill window size: " << _window_size << " input end "<<stream_in().input_ended()<<" buffer size "<<stream_in().buffer_size()<<endl;
     if (_window_size == 0) {
         if (_bytes_in_flight == 0) {
             _window_size = 1;
@@ -38,7 +41,7 @@ void TCPSender::fill_window() {
     } else {
         _win_zero_flag = false;
     }
-
+    cerr<<"reach here1"<<endl;
     TCPSegment seg;
     seg.header().seqno = next_seqno();
     if (!_set_connect) {
@@ -54,25 +57,25 @@ void TCPSender::fill_window() {
         // std::cout << "timer start ticks: " << _ticks << endl;
         return;
     }
-    if (_closed) {
-        return;
-    }
+
+
 
     size_t would_read = _window_size < TCPConfig::MAX_PAYLOAD_SIZE ? _window_size : TCPConfig::MAX_PAYLOAD_SIZE;
     string data = stream_in().read(would_read);
     // std::cout<<"data empty:"<<data.empty()<<" inputended: "<<stream_in().input_ended()<<endl;
     if (data.empty() && !stream_in().input_ended()) {
         //std::cout<<"return because data empty"<<endl;
+        cerr<<"reach3"<<endl;
         return;
     }
     _window_size -= data.size();
 
     Buffer buffer(std::move(data));
     seg.payload() = std::move(buffer);
-    if (_window_size && stream_in().input_ended()) {
+    if (_window_size && stream_in().input_ended()&&stream_in().buffer_empty()) {
         _window_size--;
         seg.header().fin = true;
-        _closed = true;
+        _closed=true;
     }
     // std::cout << "windowsize:" << _window_size << endl;
     _flight.push(seg);
@@ -85,6 +88,7 @@ void TCPSender::fill_window() {
         _ticks = 0;
         // std::cout << "timer start ticks: " << _ticks << endl;
     }
+    cerr<<"reach4"<<endl;
     fill_window();
 }
 
@@ -93,7 +97,7 @@ void TCPSender::fill_window() {
 void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) {
     uint64_t absolute_ackno = unwrap(ackno, _isn, _checkpoint);
     // std::cout << "recack:absoack " << absolute_ackno << " checkpoint " << _checkpoint<<endl;
-    if (unwrap(ackno, _isn, _checkpoint) > _checkpoint + _bytes_in_flight) {
+    if (absolute_ackno > _checkpoint + _bytes_in_flight) {
         return;
     }
     if (absolute_ackno > _checkpoint) {
