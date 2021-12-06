@@ -83,6 +83,7 @@ void TCPSpongeSocket<AdaptT>::_initialize_TCP(const TCPConfig &config) {
 
             // debugging output:
             if (_thread_data.eof() and _tcp.value().bytes_in_flight() == 0 and not _fully_acked) {
+                cerr<<"rule111111111111111111111111111111111111111111111111111111111111111\r\n"<<endl;
                 cerr << "DEBUG: Outbound stream to " << _datagram_adapter.config().destination.to_string()
                      << " has been fully acknowledged.\n";
                 _fully_acked = true;
@@ -97,7 +98,7 @@ void TCPSpongeSocket<AdaptT>::_initialize_TCP(const TCPConfig &config) {
         _thread_data,
         Direction::In,
         [&] {
-            cerr<<"read data remaining_out_bound_capacity"<<_tcp->remaining_outbound_capacity()<<endl;
+
             const auto data = _thread_data.read(_tcp->remaining_outbound_capacity());
             const auto len = data.size();
             const auto amount_written = _tcp->write(move(data));
@@ -105,11 +106,10 @@ void TCPSpongeSocket<AdaptT>::_initialize_TCP(const TCPConfig &config) {
             if (amount_written != len) {
                 throw runtime_error("TCPConnection::write() accepted less than advertised length");
             }
-            cerr<<"thread reach eof "<<_thread_data.eof()<<endl;
             if (_thread_data.eof()) {
                 _tcp->end_input_stream();
                 _outbound_shutdown = true;
-
+                cerr<<"rule22222222222222222222222222222222222222222222222222222222222222\r\n"<<endl;
                 // debugging output:
                 cerr << "DEBUG: Outbound stream to " << _datagram_adapter.config().destination.to_string()
                      << " finished (" << _tcp.value().bytes_in_flight() << " byte"
@@ -136,11 +136,11 @@ void TCPSpongeSocket<AdaptT>::_initialize_TCP(const TCPConfig &config) {
             const std::string buffer = inbound.peek_output(amount_to_write);
             const auto bytes_written = _thread_data.write(move(buffer), false);
             inbound.pop_output(bytes_written);
-            cerr<<"receiver fetch inbound "<<bytes_written<<" buffer.size "<< buffer.size()<<" amount to write"<<amount_to_write<<endl;
+            cerr<<"receiver fetch inbound "<<bytes_written<<" buffer.size "<< buffer.size()<<endl;
             if (inbound.eof() or inbound.error()) {
                 _thread_data.shutdown(SHUT_WR);
                 _inbound_shutdown = true;
-
+                cerr<<"rule33333333333333333333333333333333333333333333333333333333333333333"<<endl;
                 // debugging output:
                 cerr << "DEBUG: Inbound stream from " << _datagram_adapter.config().destination.to_string()
                      << " finished " << (inbound.error() ? "with an error/reset.\n" : "cleanly.\n");

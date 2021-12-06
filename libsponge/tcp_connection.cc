@@ -125,7 +125,7 @@ bool TCPConnection::active() const {
     }
     return !(TCPState::state_summary(_sender) == TCPSenderStateSummary::FIN_ACKED &&
                TCPState::state_summary(_receiver) == TCPReceiverStateSummary::FIN_RECV&&!_linger_after_streams_finish);
-    return !_stream_closed || _linger_after_streams_finish;
+
 }
 
 size_t TCPConnection::write(const string &data) {
@@ -199,6 +199,7 @@ TCPConnection::~TCPConnection() {
         std::cerr << "Exception destructing TCP FSM: " << e.what() << std::endl;
     }
 }
+int total_send=0;
 void TCPConnection::send() {
     if (_sender.segments_out().empty()) {
         if (_recent_need_to_ack_instantly && _receiver.ackno().has_value()) {
@@ -209,7 +210,8 @@ void TCPConnection::send() {
             seg.header().ackno = _receiver.ackno().value();
             seg.header().win = _receiver.window_size();
             segments_out().push(seg);
-
+            cerr<<"send seg with data "<<seg.length_in_sequence_space()<<" now total send "<<total_send<<endl;
+            total_send+=seg.length_in_sequence_space();
 
             _recent_need_to_ack_instantly = false;
             //_ticks_since_last_ack = 0;
@@ -225,10 +227,13 @@ void TCPConnection::send() {
             _sender.segments_out().front().header().win = _receiver.window_size();
             _recent_need_to_ack_instantly = false;
             //_ticks_since_last_ack=0;
-        }
 
+        }
+        cerr<<"send seg with data "<<_sender.segments_out().front().length_in_sequence_space()<<" now total send "<<total_send<<endl;
+        total_send+=_sender.segments_out().front().length_in_sequence_space();
         _segments_out.push(_sender.segments_out().front());
 
         _sender.segments_out().pop();
     }
 }
+
