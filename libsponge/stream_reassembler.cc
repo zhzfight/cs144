@@ -1,4 +1,5 @@
 #include "stream_reassembler.hh"
+
 #include <iostream>
 // Dummy implementation of a stream reassembler.
 
@@ -19,21 +20,21 @@ StreamReassembler::StreamReassembler(const size_t capacity)
     , _bitmap(capacity, false)
     , _unassembled_bytes(0)
     , _cur(0)
-    , _eof(false) {}
+    , _eof(false) {
+
+}
 
 //! \details This function accepts a substring (aka a segment) of bytes,
 //! possibly out-of-order, from the logical stream, and assembles any newly
 //! contiguous substrings and writes them into the output stream in order.
-bool StreamReassembler::push_substring(const string_view &data, const size_t index, const bool eof) {
+bool StreamReassembler::push_substring(const string &data, const size_t index, const bool eof) {
     if (index >= _cur + stream_out().remaining_capacity()) {
-        if (index > _cur + stream_out().remaining_capacity()){
+        if (index > _cur + stream_out().remaining_capacity()) {
             return false;
-        }else{
+        } else {
             return true;
         }
-
     }
-
     if (index + data.size() <= _cur) {
         if (eof) {
             _eof = eof;
@@ -41,12 +42,13 @@ bool StreamReassembler::push_substring(const string_view &data, const size_t ind
         if (_eof && empty()) {
             stream_out().end_input();
         }
-        if (index+data.size()<_cur){
+        if (index + data.size() < _cur) {
             return false;
-        }else{
+        } else {
             return true;
         }
     }
+    /*
     size_t begin = _cur > index ? _cur : index;
     size_t end = index + data.size() < _cur + stream_out().remaining_capacity()
                      ? index + data.size()
@@ -60,8 +62,6 @@ bool StreamReassembler::push_substring(const string_view &data, const size_t ind
         }
     }
 
-
-
     if (end - index == data.size() && eof) {
         _eof = true;
     }
@@ -73,10 +73,37 @@ bool StreamReassembler::push_substring(const string_view &data, const size_t ind
         _bitmap.pop_front();
         _bitmap.push_back(false);
     }
+
     size_t len = write_in.size();
 
     if (len > 0) {
         _cur += len;
+        _unassembled_bytes -= len;
+        stream_out().write(write_in);
+    }
+*/
+    size_t pos = _cur > index ? _cur - index : 0;
+    size_t nums = index + data.size() > _cur + stream_out().remaining_capacity()
+                      ? _cur + stream_out().remaining_capacity() - pos-index
+                      : data.size() - pos;
+
+    if (pos+nums==data.size()&&eof){
+        _eof=true;
+    }
+    string str=data.substr(pos,nums);
+
+    mergerIntoBuffer(str, index+pos);
+    string write_in = "";
+
+    while (!_buffer.empty() && _buffer.front().first == _cur) {
+
+        write_in += _buffer.front().second;
+        _cur+=_buffer.front().second.size();
+        _buffer.pop_front();
+    }
+    size_t len = write_in.size();
+
+    if (len > 0) {
         _unassembled_bytes -= len;
         stream_out().write(write_in);
     }
@@ -90,3 +117,49 @@ bool StreamReassembler::push_substring(const string_view &data, const size_t ind
 size_t StreamReassembler::unassembled_bytes() const { return _unassembled_bytes; }
 
 bool StreamReassembler::empty() const { return unassembled_bytes() == 0; }
+
+void StreamReassembler::mergerIntoBuffer(std::string &data, const size_t index) {
+
+    int len = _buffer.size();
+    if (len == 0) {
+        _buffer.push_back({index, data});
+        _unassembled_bytes+=data.size();
+
+        return;
+    }
+    size_t left = index;
+    size_t right = index + data.size()-1;
+
+    int i;
+    for (i = len; i-- > 0;) {
+        if (_buffer[i].first + _buffer[i].second.size()-1 < left) {
+
+            _buffer.insert(_buffer.begin() + i+1, {left, data});
+            _unassembled_bytes+=right-left+1;
+            i=-2;
+        } else if (_buffer[i].first + _buffer[i].second.size() >= left && _buffer[i].first <= right) {
+
+            if (_buffer[i].first<left){
+                data=_buffer[i].second.substr(0,left-_buffer[i].first)+data;
+
+                left=_buffer[i].first;
+            }
+            if (_buffer[i].first+_buffer[i].second.size()>right){
+                data=data+_buffer[i].second.substr(right-_buffer[i].first+1);
+                right=_buffer[i].first+_buffer[i].second.size();
+            }
+
+            _buffer.erase(_buffer.begin() + i);
+            _unassembled_bytes-=_buffer[i].second.size();
+            // merge data
+
+        }
+    }
+    if (i == -1){
+        _buffer.insert(_buffer.begin(), {left, data});
+        _unassembled_bytes+=data.size();
+    }
+
+
+
+}

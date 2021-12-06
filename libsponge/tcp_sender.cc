@@ -66,6 +66,7 @@ void TCPSender::fill_window() {
         return;
     }
     _window_size -= data.size();
+
     Buffer buffer(std::move(data));
     seg.payload() = std::move(buffer);
     if (_window_size && stream_in().input_ended()) {
@@ -136,10 +137,7 @@ void TCPSender::tick(const size_t ms_since_last_tick) {
     if (_ticks >= _RTO) {
         send(_flight.front());
         _ticks = 0;
-
-
         _consecutive_retransmissions++;
-
         if (!_win_zero_flag) {
             _RTO *= 2;
         }
@@ -150,7 +148,6 @@ unsigned int TCPSender::consecutive_retransmissions() const { return _consecutiv
 
 void TCPSender::send_empty_segment() {
     TCPSegment seg;
-
-
+    seg.header().seqno=next_seqno();
     send(seg);
 }

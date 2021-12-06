@@ -101,7 +101,7 @@ void TCPSpongeSocket<AdaptT>::_initialize_TCP(const TCPConfig &config) {
             const auto data = _thread_data.read(_tcp->remaining_outbound_capacity());
             const auto len = data.size();
             const auto amount_written = _tcp->write(move(data));
-            cerr<<"acutal write "<<amount_written<<endl;
+            cerr<<"acutal write "<<amount_written<< " data size"<<len<<endl;
             if (amount_written != len) {
                 throw runtime_error("TCPConnection::write() accepted less than advertised length");
             }
@@ -117,8 +117,6 @@ void TCPSpongeSocket<AdaptT>::_initialize_TCP(const TCPConfig &config) {
             }
         },
         [&] {
-            bool res=(_tcp->active()) and (not _outbound_shutdown) and (_tcp->remaining_outbound_capacity() > 0);
-            cerr<<"rule2 "<<"active "<<_tcp->active()<<" outbound_shutdown "<<_outbound_shutdown<<" remain "<<_tcp->remaining_outbound_capacity()<<" res"<<res<<endl;
             return (_tcp->active()) and (not _outbound_shutdown) and (_tcp->remaining_outbound_capacity() > 0); },
         [&] {
             _tcp->end_input_stream();
@@ -138,7 +136,7 @@ void TCPSpongeSocket<AdaptT>::_initialize_TCP(const TCPConfig &config) {
             const std::string buffer = inbound.peek_output(amount_to_write);
             const auto bytes_written = _thread_data.write(move(buffer), false);
             inbound.pop_output(bytes_written);
-
+            cerr<<"receiver fetch inbound "<<bytes_written<<" buffer.size "<< buffer.size()<<" amount to write"<<amount_to_write<<endl;
             if (inbound.eof() or inbound.error()) {
                 _thread_data.shutdown(SHUT_WR);
                 _inbound_shutdown = true;
@@ -152,6 +150,7 @@ void TCPSpongeSocket<AdaptT>::_initialize_TCP(const TCPConfig &config) {
             }
         },
         [&] {
+
             return (not _tcp->inbound_stream().buffer_empty()) or
                    ((_tcp->inbound_stream().eof() or _tcp->inbound_stream().error()) and not _inbound_shutdown);
         });

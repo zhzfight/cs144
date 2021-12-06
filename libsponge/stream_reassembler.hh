@@ -4,7 +4,7 @@
 #include "byte_stream.hh"
 
 #include <cstdint>
-#include <map>
+#include <vector>
 #include <string>
 
 //! \brief A class that assembles a series of excerpts from a byte stream (possibly out of order,
@@ -17,9 +17,12 @@ class StreamReassembler {
     size_t _capacity;    //!< The maximum number of bytes
     std::deque<char> _unassembled;
     std::deque<bool> _bitmap{};
+    std::deque<std::pair<size_t,std::string>> _buffer{};
     size_t _unassembled_bytes;
     uint64_t _cur;
     bool _eof;
+
+    void mergerIntoBuffer( std::string &data, const size_t index);
 
 
   public:
@@ -36,7 +39,7 @@ class StreamReassembler {
     //! \param data the substring
     //! \param index indicates the index (place in sequence) of the first byte in `data`
     //! \param eof the last byte of `data` will be the last byte in the entire stream
-    bool push_substring(const std::string_view &data, const uint64_t index, const bool eof);
+    bool push_substring(const std::string &data, const uint64_t index, const bool eof);
 
     //! \name Access the reassembled byte stream
     //!@{
