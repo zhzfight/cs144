@@ -14,12 +14,11 @@ class TCPConnection {
     TCPSender _sender{_cfg.send_capacity, _cfg.rt_timeout, _cfg.fixed_isn};
 
 
+
     size_t _ticks_since_last_segment_received{0};
     //size_t _ticks_since_last_ack{0};
     bool _recent_need_to_ack_instantly{false};
-    WrappingInt32 _ackno{0};
-    bool _fin_be_ack{false};
-    bool _stream_closed{false};
+
 
 
     //! outbound queue of segments that the TCPConnection wants sent
@@ -31,9 +30,12 @@ class TCPConnection {
     bool _linger_after_streams_finish{true};
 
 
+
     void send();
 
   public:
+
+
     //! \name "Input" interface for the writer
     //!@{
 

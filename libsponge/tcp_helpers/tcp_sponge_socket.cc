@@ -72,22 +72,25 @@ void TCPSpongeSocket<AdaptT>::_initialize_TCP(const TCPConfig &config) {
     //    given to underlying datagram socket)
 
     // rule 1: read from filtered packet stream and dump into TCPConnection
+
     _eventloop.add_rule(
         _datagram_adapter,
         Direction::In,
         [&] {
             auto seg = _datagram_adapter.read();
             if (seg) {
+                cerr<<_datagram_adapter.config().source.to_string()<<" get seg "<<seg.value().header().to_string();
                 _tcp->segment_received(move(seg.value()));
             }
 
             // debugging output:
             if (_thread_data.eof() and _tcp.value().bytes_in_flight() == 0 and not _fully_acked) {
-                cerr<<"rule111111111111111111111111111111111111111111111111111111111111111\r\n"<<endl;
+
                 cerr << "DEBUG: Outbound stream to " << _datagram_adapter.config().destination.to_string()
                      << " has been fully acknowledged.\n";
                 _fully_acked = true;
             }
+
         },
         [&] {
 
@@ -102,14 +105,14 @@ void TCPSpongeSocket<AdaptT>::_initialize_TCP(const TCPConfig &config) {
             const auto data = _thread_data.read(_tcp->remaining_outbound_capacity());
             const auto len = data.size();
             const auto amount_written = _tcp->write(move(data));
-            cerr<<"acutal write "<<amount_written<< " data size"<<len<<endl;
+
             if (amount_written != len) {
                 throw runtime_error("TCPConnection::write() accepted less than advertised length");
             }
             if (_thread_data.eof()) {
                 _tcp->end_input_stream();
                 _outbound_shutdown = true;
-                cerr<<"rule22222222222222222222222222222222222222222222222222222222222222\r\n"<<endl;
+
                 // debugging output:
                 cerr << "DEBUG: Outbound stream to " << _datagram_adapter.config().destination.to_string()
                      << " finished (" << _tcp.value().bytes_in_flight() << " byte"
@@ -117,6 +120,7 @@ void TCPSpongeSocket<AdaptT>::_initialize_TCP(const TCPConfig &config) {
             }
         },
         [&] {
+
             return (_tcp->active()) and (not _outbound_shutdown) and (_tcp->remaining_outbound_capacity() > 0); },
         [&] {
             _tcp->end_input_stream();
@@ -136,11 +140,10 @@ void TCPSpongeSocket<AdaptT>::_initialize_TCP(const TCPConfig &config) {
             const std::string buffer = inbound.peek_output(amount_to_write);
             const auto bytes_written = _thread_data.write(move(buffer), false);
             inbound.pop_output(bytes_written);
-            cerr<<"receiver fetch inbound "<<bytes_written<<" buffer.size "<< buffer.size()<<endl;
             if (inbound.eof() or inbound.error()) {
                 _thread_data.shutdown(SHUT_WR);
                 _inbound_shutdown = true;
-                cerr<<"rule33333333333333333333333333333333333333333333333333333333333333333"<<endl;
+
                 // debugging output:
                 cerr << "DEBUG: Inbound stream from " << _datagram_adapter.config().destination.to_string()
                      << " finished " << (inbound.error() ? "with an error/reset.\n" : "cleanly.\n");
@@ -161,11 +164,13 @@ void TCPSpongeSocket<AdaptT>::_initialize_TCP(const TCPConfig &config) {
         Direction::Out,
         [&] {
             while (not _tcp->segments_out().empty()) {
+                cerr<<_datagram_adapter.config().source.to_string()<<" send seg "<<_tcp->segments_out().front().header().to_string()<<endl;
                 _datagram_adapter.write(_tcp->segments_out().front());
                 _tcp->segments_out().pop();
             }
         },
         [&] {
+
             return not _tcp->segments_out().empty(); });
 }
 
@@ -268,9 +273,10 @@ void TCPSpongeSocket<AdaptT>::_tcp_main() {
         _tcp_loop([] { return true; });
         shutdown(SHUT_RDWR);
         if (not _tcp.value().active()) {
-            cerr << "DEBUG: TCP connection finished "
+            cerr <<" DEBUG: TCP connection finished "
                  << (_tcp.value().state() == TCPState::State::RESET ? "uncleanly" : "cleanly.\n");
         }
+        cerr<<"here reset"<<endl;
         _tcp.reset();
     } catch (const exception &e) {
         cerr << "Exception in TCPConnection runner thread: " << e.what() << "\n";

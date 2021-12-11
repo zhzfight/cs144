@@ -30,7 +30,6 @@ void TCPSender::fill_window() {
     if (_closed){
         return;
     }
-    cerr << "fill window size: " << _window_size << " input end "<<stream_in().input_ended()<<" buffer size "<<stream_in().buffer_size()<<endl;
     if (_window_size == 0) {
         if (_bytes_in_flight == 0) {
             _window_size = 1;
@@ -41,7 +40,7 @@ void TCPSender::fill_window() {
     } else {
         _win_zero_flag = false;
     }
-    cerr<<"reach here1"<<endl;
+
     TCPSegment seg;
     seg.header().seqno = next_seqno();
     if (!_set_connect) {
@@ -54,7 +53,7 @@ void TCPSender::fill_window() {
         send(seg);
         _timer_start = true;
         _ticks = 0;
-        // std::cout << "timer start ticks: " << _ticks << endl;
+
         return;
     }
 
@@ -62,10 +61,9 @@ void TCPSender::fill_window() {
 
     size_t would_read = _window_size < TCPConfig::MAX_PAYLOAD_SIZE ? _window_size : TCPConfig::MAX_PAYLOAD_SIZE;
     string data = stream_in().read(would_read);
-    // std::cout<<"data empty:"<<data.empty()<<" inputended: "<<stream_in().input_ended()<<endl;
+
     if (data.empty() && !stream_in().input_ended()) {
-        //std::cout<<"return because data empty"<<endl;
-        cerr<<"reach3"<<endl;
+
         return;
     }
     _window_size -= data.size();
@@ -77,7 +75,7 @@ void TCPSender::fill_window() {
         seg.header().fin = true;
         _closed=true;
     }
-    // std::cout << "windowsize:" << _window_size << endl;
+
     _flight.push(seg);
     _next_seqno += seg.length_in_sequence_space();
     _bytes_in_flight += seg.length_in_sequence_space();
@@ -86,9 +84,9 @@ void TCPSender::fill_window() {
     if (!_timer_start) {
         _timer_start = true;
         _ticks = 0;
-        // std::cout << "timer start ticks: " << _ticks << endl;
+
     }
-    cerr<<"reach4"<<endl;
+
     fill_window();
 }
 
@@ -96,15 +94,15 @@ void TCPSender::fill_window() {
 //! \param window_size The remote receiver's advertised window size
 void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) {
     uint64_t absolute_ackno = unwrap(ackno, _isn, _checkpoint);
-    // std::cout << "recack:absoack " << absolute_ackno << " checkpoint " << _checkpoint<<endl;
+    //cerr<<"absolute ackno "<<absolute_ackno<<" check point "<<_checkpoint<<" bytes in fligth "<<_bytes_in_flight<<endl;
     if (absolute_ackno > _checkpoint + _bytes_in_flight) {
+        //cerr<<" fault ack absolute_ackno > _checkpoint + _bytes_in_flight"<<endl;
         return;
     }
     if (absolute_ackno > _checkpoint) {
         _RTO = _initial_retransmission_timeout;
         _consecutive_retransmissions = 0;
         while (!_flight.empty()) {
-
             uint64_t first_seg_seqno =
                 unwrap(_flight.front().header().seqno, _isn, _checkpoint) + _flight.front().length_in_sequence_space();
             if (first_seg_seqno <= absolute_ackno) {
@@ -112,23 +110,29 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
                 _checkpoint = first_seg_seqno;
                 _flight.pop();
             } else {
-                // std::cout<<"bytes in flight "<<_bytes_in_flight<<" - "<<absolute_ackno - _checkpoint<<" = ";
+
                 _bytes_in_flight -= absolute_ackno - _checkpoint;
                 _checkpoint = absolute_ackno;
                 break;
             }
         }
         _ticks = 0;
-        //std::cout << "bigger ack timer reset to 0" << endl;
+
         if (_flight.empty()) {
-            // std::cout << "no outstanding,timer stop" << endl;
+
             _timer_start = false;
         }
-        // std::cout << "afterack:absoack " << absolute_ackno << " checkpoint " << _checkpoint<<endl;
+
+    }else{
+        //cerr<<"didnot ack anything absolute_ackno <= _checkpoint"<<endl;
     }
-    //std::cout<<"now flight "<<_flight.size()<<endl;
-    _window_size = window_size - _bytes_in_flight;
-    // std::cout << "after ack now windowsize: " << _window_size << " bytes in flight:"<<_bytes_in_flight<<endl;
+    if (window_size>_bytes_in_flight){
+        _window_size = window_size - _bytes_in_flight;
+        //cerr<<"windows change window size "<<window_size<<" byte in flight "<<_bytes_in_flight<<" after change "<<_window_size<<endl;
+    }
+
+
+
 }
 
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
@@ -137,7 +141,7 @@ void TCPSender::tick(const size_t ms_since_last_tick) {
         return;
     }
     _ticks += ms_since_last_tick;
-    // std::cout << "now ticks: " << _ticks << " _rtos: " << _RTO << endl;
+
     if (_ticks >= _RTO) {
         send(_flight.front());
         _ticks = 0;

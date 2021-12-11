@@ -10,18 +10,20 @@ void DUMMY_CODE(Targs &&.../* unused */) {}
 
 using namespace std;
 
-bool TCPReceiver::segment_received(const TCPSegment &seg) {
+void TCPReceiver::segment_received(const TCPSegment &seg) {
+    //cerr<<"segment received"<<endl;
     if (!_connection_set && seg.header().syn) {
+        //cerr<<"connect set and initial isn"<<endl;
         _connection_set = true;
         _ISN = seg.header().seqno;
     }
-
-    bool in_window=_reassembler.push_substring(seg.payload().copy(),
+    //cerr<<"absolute seq "<<unwrap(seg.header().seqno , _ISN, _checkpoint)<<endl;
+    _reassembler.push_substring(seg.payload().copy(),
                                 unwrap(seg.header().seqno , _ISN, _checkpoint)+(seg.header().syn ? 1 : 0)-1,
                                 seg.header().fin);
 
     _checkpoint=_reassembler.get_cur_index();
-    return in_window;
+
 
 
 }

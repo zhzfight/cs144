@@ -135,15 +135,16 @@ static tuple<TCPConfig, FdAdapterConfig, bool, char *> get_config(int argc, char
 }
 
 int main(int argc, char **argv) {
+
     try {
         if (argc < 3) {
             show_usage(argv[0], "ERROR: required arguments are missing.");
             return EXIT_FAILURE;
         }
-
         auto [c_fsm, c_filt, listen, tun_dev_name] = get_config(argc, argv);
         LossyTCPOverIPv4SpongeSocket tcp_socket(LossyTCPOverIPv4OverTunFdAdapter(
             TCPOverIPv4OverTunFdAdapter(TunFD(tun_dev_name == nullptr ? TUN_DFLT : tun_dev_name))));
+
         if (listen) {
             tcp_socket.listen_and_accept(c_fsm, c_filt);
         } else {

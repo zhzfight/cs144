@@ -3,6 +3,7 @@
 
 #include <deque>
 #include <string>
+#include <iostream>
 
 //! \brief An in-order byte stream.
 
@@ -17,13 +18,12 @@ class ByteStream {
     // all, but if any of your tests are taking longer than a second,
     // that's a sign that you probably want to keep exploring
     // different approaches.
+    bool _error{false};  //!< Flag indicating that the stream suffered an error.
     size_t capacity_;
-    std::string buffer_{};
     bool input_end_ = false;
     size_t total_written = 0;
     size_t total_read = 0;
-    bool _error{};  //!< Flag indicating that the stream suffered an error.
-
+    std::string buffer_{};
   public:
     //! Construct a stream with room for `capacity` bytes.
     ByteStream(const size_t capacity);
@@ -43,7 +43,9 @@ class ByteStream {
     void end_input();
 
     //! Indicate that the stream suffered an error.
-    void set_error() { _error = true; }
+    void set_error() {
+        _error = true;
+        }
     //!@}
 
     //! \name "Output" interface for the reader

@@ -15,8 +15,6 @@ class StreamReassembler {
 
     ByteStream _output;  //!< The reassembled in-order byte stream
     size_t _capacity;    //!< The maximum number of bytes
-    std::deque<char> _unassembled;
-    std::deque<bool> _bitmap{};
     std::deque<std::pair<size_t,std::string>> _buffer{};
     size_t _unassembled_bytes;
     uint64_t _cur;
@@ -39,7 +37,7 @@ class StreamReassembler {
     //! \param data the substring
     //! \param index indicates the index (place in sequence) of the first byte in `data`
     //! \param eof the last byte of `data` will be the last byte in the entire stream
-    bool push_substring(const std::string &data, const uint64_t index, const bool eof);
+    void push_substring(const std::string &data, const uint64_t index, const bool eof);
 
     //! \name Access the reassembled byte stream
     //!@{
